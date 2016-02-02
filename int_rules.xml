@@ -1,0 +1,247 @@
+<!-- @(#) $Id: ./etc/rules/scytl_rules.xml, 2015/02/05 alosada @ Scytl Secure Electronic Voting $-->
+
+<!-- Modify it at your will. But please add comments or info tags -->
+
+<group name="local,syslog,scytl,">
+
+  <!-- Note that rule id 5711 is defined at the ssh_rules file
+    -  as a ssh failed login. This is just an example
+    -  since ip 1.1.1.1 shouldn't be used anywhere.
+    -  Level 0 means ignore.
+    -->
+  <rule id="100001" level="0">
+    <if_sid>5711</if_sid>
+    <srcip>1.1.1.1</srcip>
+    <description>Example of rule that will ignore sshd </description>
+    <description>failed logins from IP 1.1.1.1.</description>
+  </rule>
+
+<!-- GENERAL -->
+
+  <rule id="119901" level="10">
+    <if_sid>5555</if_sid>
+    <match>password changed for root</match>
+    <description>Root password changed</description>
+    <group>sysadmin_notification,</group>
+  </rule>
+
+  <rule id="5901" level="6" overwrite="yes">
+    <match>^new group</match>
+    <description>New group added to the system</description>
+  </rule>
+
+  <rule id="119902" level="15">
+    <if_sid>5902</if_sid>
+    <match>GID=0|GID=10</match>
+    <description>User created in group WHEEL or ROOT</description>
+    <group>sysadmin_notification,</group>
+  </rule>
+
+  <rule id="119903" level="15">
+    <program_name>usermod|useradd</program_name>
+    <regex>add '\S+' to group 'root'|add '\S+' to group 'wheel'</regex>
+    <description>User added into group WHEEL or ROOT</description>
+    <group>sysadmin_notification,</group>
+    
+  </rule>
+
+<!-- Can't connect to MySQL server on 'mysql-dmz.scytl.net' -->
+
+  <rule id="119904" level="15">
+    <if_sid>1002</if_sid>
+    <match>Can't connect to MySQL server on 'mysql-dmz.scytl.net'</match>
+    <description>Network error connecting to mysql-dmz.scytl.net</description>
+    <info type="text">Redmine at the moment is the only one that connects to Mysql-dmz</info> 
+    <group>sysadmin_notification,</group>
+  </rule>
+
+
+<!-- END GENERAL -->
+
+<!-- REDMINE -->
+ 
+  <rule id="100002" level="0">
+    <if_sid>1003</if_sid>
+    <match>Parameters:</match>
+    <description>Ignoring Redmine packet size too large</description>
+  </rule>
+ 
+  <rule id="100003" level="0">
+    <if_sid>1002</if_sid>
+    <match>Parameters:|error.html.erb|AH02039: Certificate Verification: Error (10): certificate has expired|AH02039: Certificate Verification: Error (20): unable to get local issuer certificate</match>
+    <description>Redmine false positives</description>
+    <info type="text">Excluded alerts by alosada at 04.02.2015 - Problems when presenting Scytl certificate, which is required for Redmine</info>
+  </rule>
+
+<!-- END REDMINE -->
+
+<!-- MARIADB - MYSQL -->
+
+  <rule id="50120" level="12" overwrite="yes">
+    <if_sid>50100</if_sid>
+    <hostname>bcngpp1vsmariadb01.scytl.net3</hostname>
+    <match>mysqld ended|Shutdown complete</match>
+    <description>Redmine database shutdown message.</description>
+    <group>sysadmin_notification,</group>
+  </rule>
+
+  <rule id="50106" level="9" overwrite="yes">
+    <if_sid>50105</if_sid>
+    <hostname>bcngpp1vsmariadb01.scytl.net3</hostname>
+    <match>Access denied for user</match>
+    <description>Database authentication failure.</description>
+    <group>sysadmin_notification,</group>
+  </rule>
+
+<!-- END MARIADB -->
+
+<!-- RNGD -->
+
+<!-- Example: Aug 13 11:06:56 VM7 rngd: No entropy sources working, exiting rngd -->
+  <rule id="100101" level="10">
+    <program_name>rngd</program_name>
+    <match>^No entropy sources working, exiting rngd</match>
+    <description>RNGD daemon exited unexpectedly</description>
+  </rule>
+
+<!-- Example: Apr 25 12:40:15 vmepro01 rngd: failed fips test -->
+  <rule id="100102" level="0">
+    <program_name>rngd</program_name>
+    <match>^failed fips test</match>
+    <description>RNGD failed test</description>
+  </rule> 
+
+<!-- END RNGD -->
+
+<!-- DEMOS -->
+<!-- 194.219.110.179 - Athens office -->
+
+   <rule id="100200" level="9">
+    <options>alert_by_email</options>
+     <if_sid>5715</if_sid>
+     <hostname>vfedemo2-gov2u|demo.scytl.net</hostname>
+     <time>6 pm - 7 am</time>
+     <srcip>!10.0.96.0/24</srcip>
+     <description>SSH login outside business hours from internet</description>
+     <group>test_notification,</group>
+   </rule>
+
+   <rule id="100201" level="0">
+    <if_sid>31122</if_sid>
+    <hostname>demo.scytl.net</hostname>
+    <id>500</id>
+    <match>POST /commons/ecuador_notifications/email.styx</match>
+    <description>Bonita expired license - avoid notifications until fixed</description>
+    <group></group>
+  </rule>
+
+   <rule id="100202" level="0">
+    <if_sid>31101,31151</if_sid>
+    <hostname>demo.scytl.net</hostname>
+    <srcip>194.219.110.179</srcip>
+    <id>400</id>
+    <match>GET /pnyx-http-api/|POST /pnyx-http-api/</match>
+    <description>Excluded notifications from Greece IP to demo pnyx-http-api</description>
+    <info type="text">Excluded alert by alosada at 23.01.2015 - Known IP of Greece office</info>
+    <group></group>
+  </rule>
+
+   <rule id="100203" level="0">
+    <if_sid>31123</if_sid>
+    <hostname>demo.scytl.net</hostname>
+    <srcip>65.19.138.34</srcip>
+    <id>503</id>
+    <match>GET /promocion/feed_sample.xml</match>
+    <description>Excluded notifications from </description>
+    <info type="text">Excluded alert by alosada at 23.01.2015 - Known IP of Greece office</info>
+    <group></group>
+  </rule>
+
+<!-- DEMOS -->
+
+<!-- OSSEC SYSCHECK -->
+
+   <rule id="100300" level="1">
+     <if_group>syscheck</if_group>
+     <match>/var/ossec/etc/shared/agent.conf</match>
+     <description>agent.conf was modified</description>
+   </rule>
+
+
+   <rule id="100301" level="9">
+    <if_sid>600</if_sid>
+    <action>restart-agent.sh</action>
+    <description>OSSEC Agent restarted due to agent.conf update</description>
+    <group>test_notification,</group>
+  </rule>
+
+<!-- END OSSEC SYSCHECK -->
+
+<!-- SYMANTEC BACKUPEXEC -->
+
+   <rule id="100400" level="1">
+     <if_sid>1002</if_sid>
+     <match>/dev/symbdsnapctl, errno: 2</match>
+     <description>Symantec BackupExec error on old Linux kernels</description> 
+     <info type="link">"http://www.symantec.com/business/support/index?page=content&id=TECH209535"</info>
+   </rule>
+
+<!-- END SYMANTEC BACKUPEXEC -->
+
+
+<!-- OPENVPN -->
+
+   <rule id="100450" level="0">
+     <if_sid>1002</if_sid>
+     <match>RESOLVE: Cannot resolve host address:</match>
+     <description>OpenVPN anonproxy host resolve error</description>
+     <info type="text">Excluded alert by alosada at 28.01.2015 - False positive in anonproxy.scytl.net</info>
+   </rule>
+  
+
+<!-- END OPENVPN -->
+
+<!-- WEBFTP -->
+
+   <rule id="31533" level="10" timeframe="20" frequency="8" overwrite="yes">
+    <if_matched_sid>31530</if_matched_sid>
+    <srcip>!10.0.0.0/8</srcip>
+    <same_source_ip />
+    <description>High amount (>10/20s) of POST requests from Internet in a small period of time (likely bot).</description>
+   </rule>
+
+   <rule id="100500" level="10" timeframe="60" frequency="18">
+    <if_matched_sid>31530</if_matched_sid>
+    <srcip>10.0.0.0/8</srcip>
+    <same_source_ip />
+    <description>High amount (>20/60s) of POST requests from Scytl Network in a small period of time (likely bot).</description>
+   </rule>
+
+
+<!-- END WEBFTP -->
+
+
+<!-- This example will ignore ssh failed logins for the user name XYZABC.
+    -->
+  <!--  
+  <rule id="100020" level="0">
+    <if_sid>5711</if_sid>
+    <user>XYZABC</user>
+    <description>Example of rule that will ignore sshd </description>
+    <description>failed logins for user XYZABC.</description>
+  </rule>
+  -->
+  
+  
+  <!-- Specify here a list of rules to ignore. -->
+  <!--
+  <rule id="100030" level="0">
+    <if_sid>12345, 23456, xyz, abc</if_sid>
+    <description>List of rules to be ignored.</description>
+  </rule>
+  -->
+   
+</group> <!-- SYSLOG,LOCAL -->
+
+
+<!-- EOF -->
